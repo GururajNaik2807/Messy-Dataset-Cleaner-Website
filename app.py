@@ -1,79 +1,71 @@
 import streamlit as st
+import io
 import pandas as pd
-import sys
-st.title("CSV Data Cleaner")
-# 1. File Uploader
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 
 def workloop(df):
-    if uploaded_file is not None:
-    # Read the CSV
-        df = pd.read_csv(uploaded_file)
-        st.write("Original Data:", df.head())
+    st.divider()
+    st.header("Our Cleaning Tools")
+    if st.checkbox("1.Do you want to fill none or any word in the empty cells"):
+         option=st.radio(
+             "Select the following You want to perform"
+            ,["Replace with \"None\"", "Replace with \"0\"","Replace with a specific word"]
+             )
+         if option=="Replace with \"None\"":
+             df=df.fillna("None")
+             st.write("Here is the representation of your csv",df.head())
+         elif option=="Replace with \"0\"":
+             df=df.fillna("0")
+             st.write("Here is the representation of your csv",df.head())
+         elif option=="Replace with a specific word":
+             customvalue=st.text_input("Enter the custom value you want to enter")
+             df=df.fillna(customvalue)
+             st.write("Here is the representation of your csv",df.head())
+    if st.checkbox("2.Do you want to drop Empty Rows"):
+        initialrows=len(df)
+        df=df.dropna()
+        # afterdropcolumns=len(df.columns)
+        rowsscount=initialrows-len(df)
+        st.write(f"*Done {rowsscount} rows has been removed.*",df.head())
+    if st.checkbox("3.Do you want to remove duplicates"):
+        initialrows=len(df)
+        df=df.drop_duplicates()
+        # afterdropcolumns=len(df.columns)
+        rowsscount=initialrows-len(df)
+        st.write(f"*Done {rowsscount} Duplicate rows has been removed.*",df.head())
+    if st.checkbox("4. Delete Specific Columns"):
+        cols_to_delete = st.multiselect("Select columns to remove", df.columns)
+        if cols_to_delete:
+            df = df.drop(columns=cols_to_delete)
+            st.warning(f"Deleted: {', '.join(cols_to_delete)}")
+            st.dataframe(df.head())
 
-    # 2. Cleaning Operations
-        if st.checkbox("Remove Duplicates"):
-            df = df.drop_duplicates()
-
-        if st.checkbox("Fill Missing Values (with 0)"):
-            df = df.fillna(0)
-        
-        if st.checkbox("Or Drop all Na"):
-            df = df.dropna()
-   
-        if st.checkbox("Want to replace a particular field data with something?"):
-            columnname=st.text_input("Enter the Field name here")
-            Previous=st.text_input("Enter the Data You want to Replace")
-            replaced=st.text_input("Enter what should it be replaced to")
-            if columnname and Previous and replaced:
-        
-              df = df.replace({columnname:Previous},replaced,regex=True)
-              print("done")
-
-
-        if st.checkbox("want to remove any unwanted symbols from your data set"):
-            if st.checkbox("Do you want to delete these from the whole dataset?"):
-            # Replaces any pattern of [...] with an empty string across all columns
-                 df = df.replace(to_replace=r'\[.*?\]', value='', regex=True)
-            else:
-                columnname=st.text_input("Please enter the columnname")
-                if columnname in df.columns:
-                     st.write("The Column Exists")
-                # Replaces any pattern of [...] with an empty string across all columns
-                     df[columnname] = df[columnname].replace(to_replace=r'\[.*?\]', value='', regex=True)
-                else:
-                    st.write("Sorry the column doesnt exists")
-
-
-
-
-
-
+            
         
         
 
+             
+    return df
+        
 
 
 
 
 def main():
-     st.title("CSV Data Cleaner")
-    # 1. File Uploader
-     uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
-     if uploaded_file is not None:
-     # Read the CSV
-         df = pd.read_csv(uploaded_file)
-         st.write("Original Data:", df.head())
-         workloop()
-    # 3. Show Cleaned Data
-     st.write("Cleaned Data:", df.head(10))
+    st.title("CSV Cleaner")
+    uploaded=st.file_uploader("Welcome To Further Proceed the Cleaning",type="csv")
+    if uploaded is not None:
+        df=pd.read_csv(uploaded,on_bad_lines="skip",engine="python")
+        st.write("File loaded sucessfully.(corrupted rows skipped)")
+        st.write("Here is your Uploaded file",df.head(15))
+        st.text(f"Total Size of your csv for rows is {df.shape[0]} and for columns is {df.shape[1]}")
+        if st.checkbox("if your Csv is correct click the checkbox and we shall proceed"):
+         cleanedcsv=workloop(df)
 
-    # 4. Download Cleaned File
-     st.download_button(
-         label="Download Cleaned CSV",
-         data=df.to_csv(index=False).encode('utf-8'),
-         file_name='cleaned_data.csv',
-         mime='text/csv',
-     )
+        
 
+
+
+
+if __name__ == "__main__":
+    main()
